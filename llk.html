@@ -1,0 +1,153 @@
+<html>
+<head>
+</head>
+<body>
+<div id="content">
+</div>
+<script src="http://auto.sina.com.cn/js/jq172.js"></script>
+<script>
+var game = {};
+
+game.pics = ['http://www.sinaimg.cn/qc/684/2009/0902/U1924P33T684D1F18649DT20091020105018.jpg',
+'http://www.sinaimg.cn/qc/684/2009/0902/U1924P33T684D2F18649DT20091020105002.jpg',
+'http://www.sinaimg.cn/qc/684/2009/0902/U1924P33T684D3F18649DT20091020104942.jpg',
+'http://www.sinaimg.cn/qc/684/2009/0902/U1924P33T684D4F18649DT20091020104926.jpg',
+'http://www.sinaimg.cn/qc/684/2009/0902/U5864P33T684D5F18649DT20110426120724.jpg',
+'http://www.sinaimg.cn/qc/684/2009/0902/U1924P33T684D6F18649DT20091020104851.jpg'];
+game.clickFirst = null;
+game.clickSecond = null;
+game.data_status = new Array();
+
+InitGame(game.pics);
+
+jQuery(function(){
+	jQuery(".logo").on('click',function(){
+		if(game.clickFirst && !game.clickSecond){
+			game.clickSecond = $(this);
+		}
+		if(!game.clickFirst && !game.clickSecond){
+			game.clickFirst = $(this);
+		}
+		if(game.clickFirst && game.clickSecond){
+			if(game.clickFirst.find('img').attr('src') == game.clickSecond.find('img').attr('src')){
+				checkLink(game.clickFirst,game.clickSecond);
+			}else{
+				alert('false');
+			}
+			game.clickFirst = game.clickSecond = null;
+		}
+	})
+});
+/*===============================================================================================*/
+function InitGame(pics){
+	var pairs = 2;
+	var data = new Array();
+	for(var i=0; i<pairs*2*pics.length; i++){
+		data[i] = pics[i%6];
+	}
+	var data_random = new Array();
+	var data_temp = new Array();
+	var index = 0;
+	var htmlStr = '';
+	for(i=0; i<pairs*2*pics.length; i++){
+		data_temp[i] = data.splice(Math.floor(Math.random()*data.length),1);
+	}
+	for(i=0; i<pairs*2*pics.length; i++){
+		data_random[i] = data_temp[i][0];
+		game.data_status[i+1] = 1;
+		htmlStr += '<a class="logo" href="#" order="' + (i+1) + '"><img src="' + data_random[i] + '" /></a>';
+		if(data_random.length % 6 == 0){
+			htmlStr += "<br>";
+		}
+	}
+	jQuery("#content").html(htmlStr);
+}
+
+function checkLink(objFirst, objSecond){
+	//step 1: get x,y point
+	coordinateFirst = getCoordinate(objFirst.attr('order'));
+	coordinateSecond= getCoordinate(objSecond.attr('order'));
+	//step 2: check link
+	if(coordinateFirst.x == coordinateSecond.x){
+		if(Math.abs(coordinateFirst.y - coordinateSecond.y) == 1){
+			alert('ok');
+			game.data_status[(coordinateFirst.y-1)*6+coordinateFirst.x] = 0;
+			game.data_status[(coordinateSecond.y-1)*6+coordinateSecond.x] = 0;
+			return;
+		}
+		//try left
+		var left_path = false;
+		for(var i=coordinateFirst.x-1; i>=0; i--){
+			if(i == 0){
+				left_path = true;
+				alert('ok');
+				game.data_status[(coordinateFirst.y-1)*6+coordinateFirst.x] = 0;
+				game.data_status[(coordinateSecond.y-1)*6+coordinateSecond.x] = 0;
+				return;
+			}
+
+			if(!game.data_status[(coordinateFirst.y-1)*6+coordinateFirst.x] && !game.data_status[(coordinateSecond.y-1)*6+coordinateSecond.x]){
+				var y_small = coordinateFirst.y > coordinateSecond.y ? coordinateSecond.y : coordinateFirst.y;
+				var y_big = coordinateFirst.y > coordinateSecond.y ? coordinateFirst.y : coordinateSecond.y;
+				left_path = true;
+				for(var j=y_small+1; j<=y_big-1; j++){
+					if(game.data_status[(j-1)*6+i]){
+						left_path = false;
+						break;
+					}
+				}
+			}
+			if(left_path){
+				alert('ok');
+				return;
+			}
+
+			
+			if(game.data_status[(coordinateFirst.y-1)*6+coordinateFirst.x] || game.data_status[(coordinateSecond.y-1)*6+coordinateSecond.x]){
+				alert('false');
+				return;
+			}
+		}
+		
+	}	
+
+	if(coordinateFirst.y == coordinateSecond.y){
+		if(Math.abs(coordinateFirst.x - coordinateSecond.x) == 1){
+			alert('ok');
+			game.data_status[(coordinateFirst.y-1)*6+coordinateFirst.x] = 0;
+			game.data_status[(coordinateSecond.y-1)*6+coordinateSecond.x] = 0;
+			return;
+		}
+	}
+	
+
+	 
+}
+
+function getCoordinate(x){
+	var line = Math.ceil(x/6);
+	var column = x%6;
+	if(column == 0){
+		column = 6;
+	}
+	return {x:column,y:line};
+}
+
+function checkLeft(first,second){
+
+}
+
+function checkRight(first,second){
+
+}
+
+function checkTop(first,second){
+
+}
+
+function checkBottom(first,second){
+	
+}
+</script>
+</body>
+</html>
