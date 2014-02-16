@@ -134,7 +134,53 @@ function getCoordinate(x){
 }
 
 function checkLeft(first,second){
+	//same column
+	var x_min = Math.min(first.x, second.x);
+	var x_max = Math.max(first.x, second.x);
+	var y_min = Math.min(first.y, second.y);				
+	var y_max = Math.max(first.y, second.y);				
+	if(first.x != second.x){
+		if((second.y-first.y)/(second.x-first.x) > 0){
+			if(checkLine(x_min, y_max, x_max, y_max)){
+				if(checkLine(x_min, y_min, x_min, y_max)){
+					return true;
+				}else{
+					var checkContinue = true;
+				}
+			}
+		}else{
+			var line = checkLine(x_min, y_min, x_max, y_min);
+			if(checkLine(x_min, y_min, x_max, y_min)){
+				if(checkLine(x_min, y_min, x_min, y_max)){
+					return true;
+				}else{
+					var checkContinue = true;
+				}
+			}
+		}
 
+		//若横向的一条线可以连通，则进入在同一列这种情况的判断
+		if(checkContinue){
+			first.x = second.x = x_min;
+		}
+	}
+	if(first.x == second.x){
+		if(x == 1){
+			return true;
+		}else{
+			for(var i=x-1; i>=0; i--){
+				if(!game.data_status[(first.y-1)*6+first.x] && !game.data_status[(second.y-1)*6+second.x]){
+					for(var j=y_min+1; j<=y_max; j++){
+						if(game.data_status[(j-1)*6+i]){
+							return false;
+						}
+					}
+				}
+			}
+			return true;
+		}
+	}
+	return false;
 }
 
 function checkRight(first,second){
@@ -147,6 +193,36 @@ function checkTop(first,second){
 
 function checkBottom(first,second){
 	
+}
+
+/*
+ * check point (x_start,y_start) (x_end, y_end) 
+ */
+function checkLine(x_start, y_start, x_end, y_end){
+	var path = true;
+	if(x_start == x_end){
+		var y_min = Math.min(y_start, y_end);	
+		var y_max = Math.max(y_start, y_end);	
+		for(var i=y_min; i++; i<=y_max){
+			if(game.data_status[(i-1)*6+x_start]){
+				path = false;
+				break;
+			}
+		}
+		return path;
+	}
+	if(y_start == y_end){
+		var x_min = Math.min(x_start, x_end);
+		var x_max = Math.max(x_start, x_end);
+		for(var i=x_min; i++; i<=x_max){
+			if(game.data_status[(y_start-1)*6+i]){
+				path = false;
+				break;
+			}
+		}
+		return path;
+	}
+	return false;
 }
 </script>
 </body>
