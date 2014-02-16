@@ -149,7 +149,6 @@ function checkLeft(first,second){
 				}
 			}
 		}else{
-			var line = checkLine(x_min, y_min, x_max, y_min);
 			if(checkLine(x_min, y_min, x_max, y_min)){
 				if(checkLine(x_min, y_min, x_min, y_max)){
 					return true;
@@ -165,10 +164,10 @@ function checkLeft(first,second){
 		}
 	}
 	if(first.x == second.x){
-		if(x == 1){
+		if(first.x == 1){
 			return true;
 		}else{
-			for(var i=x-1; i>=0; i--){
+			for(var i=first.x-1; i>=0; i--){
 				if(!game.data_status[(first.y-1)*6+first.x] && !game.data_status[(second.y-1)*6+second.x]){
 					for(var j=y_min+1; j<=y_max; j++){
 						if(game.data_status[(j-1)*6+i]){
@@ -184,7 +183,52 @@ function checkLeft(first,second){
 }
 
 function checkRight(first,second){
+	//same column
+	var x_min = Math.min(first.x, second.x);
+	var x_max = Math.max(first.x, second.x);
+	var y_min = Math.min(first.y, second.y);				
+	var y_max = Math.max(first.y, second.y);				
+	if(first.x != second.x){
+		if((second.y-first.y)/(second.x-first.x) > 0){
+			if(checkLine(x_min, y_min, x_max, y_min)){
+				if(checkLine(x_max, y_min, x_max, y_max)){
+					return true;
+				}else{
+					var checkContinue = true;
+				}
+			}
+		}else{
+			if(checkLine(x_min, y_max, x_max, y_max)){
+				if(checkLine(x_max, y_min, x_max, y_max)){
+					return true;
+				}else{
+					var checkContinue = true;
+				}
+			}
+		}
 
+		//若横向的一条线可以连通，则进入在同一列这种情况的判断
+		if(checkContinue){
+			first.x = second.x = x_max;
+		}
+	}
+	if(first.x == second.x){
+		if(first.x == 6){
+			return true;
+		}else{
+			for(var i=first.x+1; i<6+1; i++){
+				if(!game.data_status[(first.y-1)*6+first.x] && !game.data_status[(second.y-1)*6+second.x]){
+					for(var j=y_min+1; j<=y_max; j++){
+						if(game.data_status[(j-1)*6+i]){
+							return false;
+						}
+					}
+				}
+			}
+			return true;
+		}
+	}
+	return false;
 }
 
 function checkTop(first,second){
