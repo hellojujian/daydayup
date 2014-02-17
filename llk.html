@@ -6,8 +6,23 @@
 </div>
 <script src="http://auto.sina.com.cn/js/jq172.js"></script>
 <script>
-var game = {};
+var game = {
+	pics : ['http://www.sinaimg.cn/qc/684/2009/0902/U1924P33T684D1F18649DT20091020105018.jpg',
+			'http://www.sinaimg.cn/qc/684/2009/0902/U1924P33T684D2F18649DT20091020105002.jpg',
+			'http://www.sinaimg.cn/qc/684/2009/0902/U1924P33T684D3F18649DT20091020104942.jpg',
+			'http://www.sinaimg.cn/qc/684/2009/0902/U1924P33T684D4F18649DT20091020104926.jpg',
+			'http://www.sinaimg.cn/qc/684/2009/0902/U5864P33T684D5F18649DT20110426120724.jpg',
+			'http://www.sinaimg.cn/qc/684/2009/0902/U1924P33T684D6F18649DT20091020104851.jpg'],
+	clickFirst : 0,
+	clickSecond : 0,
+	data_status : [],
+	matrix_width : 6,
+	matrix_height : 4,
+	firstPic : null,
+	secondPic : null
+};
 
+/*
 game.pics = ['http://www.sinaimg.cn/qc/684/2009/0902/U1924P33T684D1F18649DT20091020105018.jpg',
 'http://www.sinaimg.cn/qc/684/2009/0902/U1924P33T684D2F18649DT20091020105002.jpg',
 'http://www.sinaimg.cn/qc/684/2009/0902/U1924P33T684D3F18649DT20091020104942.jpg',
@@ -17,24 +32,28 @@ game.pics = ['http://www.sinaimg.cn/qc/684/2009/0902/U1924P33T684D1F18649DT20091
 game.clickFirst = null;
 game.clickSecond = null;
 game.data_status = new Array();
+*/
 
 InitGame(game.pics);
 
 jQuery(function(){
 	jQuery(".logo").on('click',function(){
 		if(game.clickFirst && !game.clickSecond){
-			game.clickSecond = $(this);
+			game.clickSecond = $(this).attr('order');
+			game.secondPic = $(this).find('img').attr('src');
 		}
 		if(!game.clickFirst && !game.clickSecond){
-			game.clickFirst = $(this);
+			game.clickFirst = $(this).attr('order');
+			game.firstPic = $(this).find('img').attr('src');
 		}
 		if(game.clickFirst && game.clickSecond){
-			if(game.clickFirst.find('img').attr('src') == game.clickSecond.find('img').attr('src')){
+			if(game.firstPic == game.secondPic){
 				checkLink(game.clickFirst,game.clickSecond);
 			}else{
 				alert('false');
 			}
-			game.clickFirst = game.clickSecond = null;
+			game.clickFirst = game.clickSecond = 0;
+			game.firstPic = game.secondPic = null;
 		}
 	})
 });
@@ -43,7 +62,7 @@ function InitGame(pics){
 	var pairs = 2;
 	var data = new Array();
 	for(var i=0; i<pairs*2*pics.length; i++){
-		data[i] = pics[i%6];
+		data[i] = pics[i%game.matrix_width];
 	}
 	var data_random = new Array();
 	var data_temp = new Array();
@@ -56,79 +75,62 @@ function InitGame(pics){
 		data_random[i] = data_temp[i][0];
 		game.data_status[i+1] = 1;
 		htmlStr += '<a class="logo" href="#" order="' + (i+1) + '"><img src="' + data_random[i] + '" /></a>';
-		if(data_random.length % 6 == 0){
+		if(data_random.length % game.matrix_width == 0){
 			htmlStr += "<br>";
 		}
 	}
 	jQuery("#content").html(htmlStr);
 }
 
-function checkLink(objFirst, objSecond){
-	//step 1: get x,y point
-	coordinateFirst = getCoordinate(objFirst.attr('order'));
-	coordinateSecond= getCoordinate(objSecond.attr('order'));
+function checkLink(orderFirst, orderSecond){
+	//step 1: get x,y coordinate 
+	coordinateFirst = getCoordinate(orderFirst);
+	coordinateSecond= getCoordinate(orderSecond);
 	//step 2: check link
 	if(coordinateFirst.x == coordinateSecond.x){
 		if(Math.abs(coordinateFirst.y - coordinateSecond.y) == 1){
 			alert('ok');
-			game.data_status[(coordinateFirst.y-1)*6+coordinateFirst.x] = 0;
-			game.data_status[(coordinateSecond.y-1)*6+coordinateSecond.x] = 0;
+			changeStatus(coordinateFirst.x, coordinateFirst.y);
+			changeStatus(coordinateSecond.x, coordinateSecond.y);
 			return;
 		}
-		//try left
-		var left_path = false;
-		for(var i=coordinateFirst.x-1; i>=0; i--){
-			if(i == 0){
-				left_path = true;
-				alert('ok');
-				game.data_status[(coordinateFirst.y-1)*6+coordinateFirst.x] = 0;
-				game.data_status[(coordinateSecond.y-1)*6+coordinateSecond.x] = 0;
-				return;
-			}
-
-			if(!game.data_status[(coordinateFirst.y-1)*6+coordinateFirst.x] && !game.data_status[(coordinateSecond.y-1)*6+coordinateSecond.x]){
-				var y_small = coordinateFirst.y > coordinateSecond.y ? coordinateSecond.y : coordinateFirst.y;
-				var y_big = coordinateFirst.y > coordinateSecond.y ? coordinateFirst.y : coordinateSecond.y;
-				left_path = true;
-				for(var j=y_small+1; j<=y_big-1; j++){
-					if(game.data_status[(j-1)*6+i]){
-						left_path = false;
-						break;
-					}
-				}
-			}
-			if(left_path){
-				alert('ok');
-				return;
-			}
-
-			
-			if(game.data_status[(coordinateFirst.y-1)*6+coordinateFirst.x] || game.data_status[(coordinateSecond.y-1)*6+coordinateSecond.x]){
-				alert('false');
-				return;
-			}
+		if(checkLeft(coordinateFirst,coordinateSecond) || checkRight(coordinateFirst,coordinateSecond)){
+			alert('ok');
+			changeStatus(coordinateFirst.x, coordinateFirst.y);
+			changeStatus(coordinateSecond.x, coordinateSecond.y);
+			return;
 		}
+		alert('false');
 		
 	}	
-
 	if(coordinateFirst.y == coordinateSecond.y){
 		if(Math.abs(coordinateFirst.x - coordinateSecond.x) == 1){
 			alert('ok');
-			game.data_status[(coordinateFirst.y-1)*6+coordinateFirst.x] = 0;
-			game.data_status[(coordinateSecond.y-1)*6+coordinateSecond.x] = 0;
+			changeStatus(coordinateFirst.x, coordinateFirst.y);
+			changeStatus(coordinateSecond.x, coordinateSecond.y);
 			return;
 		}
+		if(checkTop(coordinateFirst,coordinateSecond) || checkBottom(coordinateFirst,coordinateSecond)){
+			alert('ok') 
+			changeStatus(coordinateFirst.x, coordinateFirst.y);
+			changeStatus(coordinateSecond.x, coordinateSecond.y);
+			return;
+		}
+		alert('false');
 	}
-	
-
-	 
+	if(checkLeft(coordinateFirst,coordinateSecond) || checkRight(coordinateFirst,coordinateSecond) || checkTop(coordinateFirst,coordinateSecond) || checkBottom(coordinateFirst,coordinateSecond)){
+		alert('ok');
+		changeStatus(coordinateFirst.x, coordinateFirst.y);
+		changeStatus(coordinateSecond.x, coordinateSecond.y);
+		return;
+	}
 }
 
 function getCoordinate(x){
-	var line = Math.ceil(x/6);
-	var column = x%6;
+	var line = Math.ceil(x/game.matrix_width);
+	var column = x%game.matrix_width;
 	if(column == 0){
-		column = 6;
+		column = game.matrix_width;
 	}
 	return {x:column,y:line};
 }
@@ -144,7 +146,7 @@ function checkLeft(first,second){
 			if(checkLine(x_min, y_max, x_max, y_max)){
 				if(checkLine(x_min, y_min, x_min, y_max)){
 					return true;
-				}else{
+				}else if(!game.data_status[getOrderFromCoordinate(x_min,y_max)]){
 					var checkContinue = true;
 				}
 			}
@@ -152,7 +154,7 @@ function checkLeft(first,second){
 			if(checkLine(x_min, y_min, x_max, y_min)){
 				if(checkLine(x_min, y_min, x_min, y_max)){
 					return true;
-				}else{
+				}else if(!game.data_status[getOrderFromCoordinate(x_min,y_min)]){
 					var checkContinue = true;
 				}
 			}
@@ -168,9 +170,9 @@ function checkLeft(first,second){
 			return true;
 		}else{
 			for(var i=first.x-1; i>=0; i--){
-				if(!game.data_status[(first.y-1)*6+first.x] && !game.data_status[(second.y-1)*6+second.x]){
-					for(var j=y_min+1; j<=y_max; j++){
-						if(game.data_status[(j-1)*6+i]){
+				if(!game.data_status[(first.y-1)*game.matrix_width+first.x] && !game.data_status[(second.y-1)*game.matrix_width+second.x]){
+					for(var j=y_min+1; j<y_max; j++){
+						if(game.data_status[(j-1)*game.matrix_width+i]){
 							return false;
 						}
 					}
@@ -193,7 +195,7 @@ function checkRight(first,second){
 			if(checkLine(x_min, y_min, x_max, y_min)){
 				if(checkLine(x_max, y_min, x_max, y_max)){
 					return true;
-				}else{
+				}else if(!game.data_status[getOrderFromCoordinate(x_max,y_min)]){
 					var checkContinue = true;
 				}
 			}
@@ -201,7 +203,7 @@ function checkRight(first,second){
 			if(checkLine(x_min, y_max, x_max, y_max)){
 				if(checkLine(x_max, y_min, x_max, y_max)){
 					return true;
-				}else{
+				}else if(!game.data_status[getOrderFromCoordinate(x_max,y_max)]){
 					var checkContinue = true;
 				}
 			}
@@ -213,13 +215,13 @@ function checkRight(first,second){
 		}
 	}
 	if(first.x == second.x){
-		if(first.x == 6){
+		if(first.x == game.matrix_width){
 			return true;
 		}else{
-			for(var i=first.x+1; i<6+1; i++){
-				if(!game.data_status[(first.y-1)*6+first.x] && !game.data_status[(second.y-1)*6+second.x]){
-					for(var j=y_min+1; j<=y_max; j++){
-						if(game.data_status[(j-1)*6+i]){
+			for(var i=first.x+1; i<game.matrix_width+1; i++){
+				if(!game.data_status[(first.y-1)*game.matrix_width+first.x] && !game.data_status[(second.y-1)*game.matrix_width+second.x]){
+					for(var j=y_min+1; j<y_max; j++){
+						if(game.data_status[(j-1)*game.matrix_width+i]){
 							return false;
 						}
 					}
@@ -232,41 +234,149 @@ function checkRight(first,second){
 }
 
 function checkTop(first,second){
+	//same row 
+	var x_min = Math.min(first.x, second.x);
+	var x_max = Math.max(first.x, second.x);
+	var y_min = Math.min(first.y, second.y);				
+	var y_max = Math.max(first.y, second.y);				
+	if(first.y != second.y){
+		if((second.y-first.y)/(second.x-first.x) > 0){
+			if(checkLine(x_max, y_min, x_max, y_max)){
+				if(checkLine(x_min, y_min, x_max, y_min)){
+					return true;
+				}else if(!game.data_status[getOrderFromCoordinate(x_max,y_min)]){
+					var checkContinue = true;
+				}
+			}
+		}else{
+			if(checkLine(x_min, y_min, x_min, y_max)){
+				if(checkLine(x_min, y_min, x_max, y_min)){
+					return true;
+				}else if(!game.data_status[getOrderFromCoordinate(x_min,y_min)]){
+					var checkContinue = true;
+				}
+			}
+		}
 
+		//若纵向的一条线可以连通，则进入在同一行这种情况的判断
+		if(checkContinue){
+			first.y = second.y = y_min;
+		}
+	}
+	if(first.y == second.y){
+		if(first.y == 1){
+			return true;
+		}else{
+			for(var i=first.y-1; i>=0; i--){
+				if(!game.data_status[(i-1)*game.matrix_width+first.x] && !game.data_status[(i-1)*game.matrix_width+second.x]){
+					for(var j=x_min+1; j<x_max; j++){
+						if(game.data_status[(i-1)*game.matrix_width+j]){
+							return false;
+						}
+					}
+				}
+			}
+			return true;
+		}
+	}
+	return false;
 }
 
 function checkBottom(first,second){
-	
+	//same row 
+	var x_min = Math.min(first.x, second.x);
+	var x_max = Math.max(first.x, second.x);
+	var y_min = Math.min(first.y, second.y);				
+	var y_max = Math.max(first.y, second.y);				
+	if(first.y != second.y){
+		if((second.y-first.y)/(second.x-first.x) > 0){
+			if(checkLine(x_min, y_max, x_min, y_min)){
+				if(checkLine(x_min, y_max, x_max, y_max)){
+					return true;
+				}else if(!game.data_status[getOrderFromCoordinate(x_min,y_max)]){
+					var checkContinue = true;
+				}
+			}
+		}else{
+			if(checkLine(x_max, y_max, x_max, y_min)){
+				if(checkLine(x_min, y_max, x_max, y_max)){
+					return true;
+				}else if(!game.data_status[getOrderFromCoordinate(x_max,y_max)]){
+					var checkContinue = true;
+				}
+			}
+		}
+
+		//若纵向的一条线可以连通，则进入在同一行这种情况的判断
+		if(checkContinue){
+			first.y = second.y = y_min;
+		}
+	}
+	if(first.y == second.y){
+		if(first.y == 1){
+			return true;
+		}else{
+			for(var i=first.y+1; i<(game.matrix_height+1); i++){
+				if(!game.data_status[(i-1)*game.matrix_width+first.x] && !game.data_status[(i-1)*game.matrix_width+second.x]){
+					for(var j=x_min+1; j<x_max; j++){
+						if(game.data_status[(i-1)*game.matrix_width+j]){
+							return false;
+						}
+					}
+				}
+			}
+			return true;
+		}
+	}
+	return false;
 }
 
 /*
  * check point (x_start,y_start) (x_end, y_end) 
  */
 function checkLine(x_start, y_start, x_end, y_end){
+	//alert([x_start,y_start]);
 	var path = true;
 	if(x_start == x_end){
-		var y_min = Math.min(y_start, y_end);	
-		var y_max = Math.max(y_start, y_end);	
-		for(var i=y_min; i++; i<=y_max){
-			if(game.data_status[(i-1)*6+x_start]){
-				path = false;
-				break;
+		if(Math.abs(y_end - y_start) == 1){
+			return path;
+		}else{
+			var y_min = Math.min(y_start, y_end);	
+			var y_max = Math.max(y_start, y_end);	
+			for(var i=y_min+1; i++; i<y_max){
+				if(game.data_status[(i-1)*game.matrix_width+x_start]){
+					//alert(game.data_status[(i-1)*game.matrix_width+x_start]);
+					return false;
+				}
 			}
+			return true;
 		}
-		return path;
 	}
 	if(y_start == y_end){
-		var x_min = Math.min(x_start, x_end);
-		var x_max = Math.max(x_start, x_end);
-		for(var i=x_min; i++; i<=x_max){
-			if(game.data_status[(y_start-1)*6+i]){
-				path = false;
-				break;
+		if(Math.abs(x_end - x_start) == 1){
+			return true;
+		}else{
+			var x_min = Math.min(x_start, x_end);
+			var x_max = Math.max(x_start, x_end);
+			for(var i=x_min+1; i++; i<x_max){
+				if(game.data_status[(y_start-1)*game.matrix_width+i]){
+					//alert(game.data_status[(y_start-1)*game.matrix_width+i]);
+					return false;
+				}
 			}
+			return true;
 		}
-		return path;
 	}
 	return false;
+}
+
+function changeStatus(x, y){
+	var order = getOrderFromCoordinate(x,y);
+	game.data_status[order] = 0;
+}
+
+function getOrderFromCoordinate(x, y){
+	return (y-1)*game.matrix_width + x;
 }
 </script>
 </body>
