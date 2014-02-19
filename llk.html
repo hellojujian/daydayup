@@ -123,9 +123,6 @@ function checkLink(orderFirst, orderSecond){
 		alert('false');
 	}
 	if(checkLeft(coordinateFirst,coordinateSecond) || checkRight(coordinateFirst,coordinateSecond) || checkTop(coordinateFirst,coordinateSecond) || checkBottom(coordinateFirst,coordinateSecond)){
-		alert([coordinateFirst.x, coordinateFirst.y]);
-		alert([coordinateSecond.x, coordinateSecond.y]);
-
 		changeStatus(coordinateFirst.x, coordinateFirst.y);
 		changeStatus(coordinateSecond.x, coordinateSecond.y);
 		return;
@@ -204,15 +201,14 @@ function checkLeft(firstClick,secondClick){
 			return true;
 		}else{
 			for(var i=first.x-1; i>=0; i--){
-				if(!game.data_status[(first.y-1)*game.matrix_width+first.x] && !game.data_status[(second.y-1)*game.matrix_width+second.x]){
-					for(var j=y_min+1; j<y_max; j++){
-						if(game.data_status[(j-1)*game.matrix_width+i]){
-							return false;
-						}
+				if(!game.data_status[getOrderFromCoordinate(i,y_min)] && !game.data_status[getOrderFromCoordinate(i,y_max)]){
+					if(checkLine(i, y_min, i, y_max)){
+						return true;
 					}
+				}else{
+					return false;
 				}
 			}
-			return true;
 		}
 	}
 	return false;
@@ -274,15 +270,14 @@ function checkRight(firstClick,secondClick){
 			return true;
 		}else{
 			for(var i=first.x+1; i<game.matrix_width+1; i++){
-				if(!game.data_status[(first.y-1)*game.matrix_width+first.x] && !game.data_status[(second.y-1)*game.matrix_width+second.x]){
-					for(var j=y_min+1; j<y_max; j++){
-						if(game.data_status[(j-1)*game.matrix_width+i]){
-							return false;
-						}
+				if(!game.data_status[getOrderFromCoordinate(i, y_min)] && !game.data_status[getOrderFromCoordinate(i, y_max)]){
+					if(checkLine(i, y_min, i, y_max)){
+						return true;
 					}
+				}else{
+					return false;
 				}
 			}
-			return true;
 		}
 	}
 	return false;
@@ -344,15 +339,14 @@ function checkTop(firstClick,secondClick){
 			return true;
 		}else{
 			for(var i=first.y-1; i>=0; i--){
-				if(!game.data_status[(i-1)*game.matrix_width+first.x] && !game.data_status[(i-1)*game.matrix_width+second.x]){
-					for(var j=x_min+1; j<x_max; j++){
-						if(game.data_status[(i-1)*game.matrix_width+j]){
-							return false;
-						}
+				if(!game.data_status[getOrderFromCoordinate(x_min, i)] && !game.data_status[getOrderFromCoordinate(x_max, i)]){
+					if(checkLine(x_min, i, x_max, i)){
+						return true;
 					}
+				}else{
+					return false;
 				}
 			}
-			return true;
 		}
 	}
 	return false;
@@ -404,25 +398,24 @@ function checkBottom(firstClick,secondClick){
 			}
 		}
 
-		//若纵向的一条线可以连通，则进入在同一行这种情况的判断
+		//若纵向的路径可以连通，则进入在同一行这种情况的判断
 		if(checkContinue){
-			first.y = second.y = y_min;
+			first.y = second.y = y_max;
 		}
 	}
 	if(first.y == second.y){
-		if(first.y == 1){
+		if(first.y == game.matrix_height){
 			return true;
 		}else{
 			for(var i=first.y+1; i<(game.matrix_height+1); i++){
-				if(!game.data_status[(i-1)*game.matrix_width+first.x] && !game.data_status[(i-1)*game.matrix_width+second.x]){
-					for(var j=x_min+1; j<x_max; j++){
-						if(game.data_status[(i-1)*game.matrix_width+j]){
-							return false;
-						}
+				if(!game.data_status[getOrderFromCoordinate(x_min, i)] && !game.data_status[getOrderFromCoordinate(x_max, i)]){
+					if(checkLine(x_min, i, x_max, i)){
+						return true;
 					}
+				}else{
+					return false;
 				}
 			}
-			return true;
 		}
 	}
 	return false;
@@ -441,7 +434,7 @@ function checkInnerArea(x_start, y_start, x_end, y_end){
 
 	if((y_end - y_start)/(x_end - x_start) > 0){
 		//→↓→
-		for(var i=x_min+1; i++; i<=Math.floor(x_min + x_max)){
+		for(var i=x_min+1; i<x_max; i++){
 			if(!game.data_status[getOrderFromCoordinate(i,y_min)] && !game.data_status[getOrderFromCoordinate(i,y_max)]){
 				if(checkLine(x_min, y_min, i, y_min) && checkLine(i, y_min, i, y_max) && checkLine(i, y_max, x_max, y_max)){
 					return true;
@@ -449,7 +442,7 @@ function checkInnerArea(x_start, y_start, x_end, y_end){
 			}
 		}
 		//↓→↓
-		for(var j=y_min+1; j++; j<=Math.floor(y_max + y_min)){
+		for(var j=y_min+1; j<y_max; j++){
 			if(!game.data_status[getOrderFromCoordinate(x_min,j)] && !game.data_status[getOrderFromCoordinate(x_max,j)]){
 				if(checkLine(x_min, y_min, x_min, j) && checkLine(x_min, j, x_max, j) && checkLine(x_max, j, x_max, y_max)){
 					return true;
@@ -458,7 +451,7 @@ function checkInnerArea(x_start, y_start, x_end, y_end){
 		}
 	}else{
 		//↑→↑
-		for(var j=y_min+1; j++; j<=Math.floor(y_max + y_min)){
+		for(var j=y_min+1; j<y_max; j++){
 			if(!game.data_status[getOrderFromCoordinate(x_max,j)] && !game.data_status[getOrderFromCoordinate(x_min,j)]){
 				if(checkLine(x_max, y_min, x_max, j) && checkLine(x_max, j, x_min, j) && checkLine(x_min, j, x_min, y_max)){
 					return true;
@@ -467,9 +460,9 @@ function checkInnerArea(x_start, y_start, x_end, y_end){
 			
 		}
 		//→↑→
-		for(var i=x_min+1; i++; i<=Math.floor(x_max + x_min)){
+		for(var i=x_min+1; i<x_max; i++){
 			if(!game.data_status[getOrderFromCoordinate(i, y_max)] && !game.data_status[getOrderFromCoordinate(i, y_min)]){
-				if(checkLine(x_min, Y_max, i, y_max) && checkLine(i, y_max, i, y_min) && checkLine(i, y_min, x_max, y_min)){
+				if(checkLine(x_min, y_max, i, y_max) && checkLine(i, y_max, i, y_min) && checkLine(i, y_min, x_max, y_min)){
 					return true;
 				}
 			}
@@ -485,14 +478,13 @@ function checkInnerArea(x_start, y_start, x_end, y_end){
  */
 function checkLine(x_start, y_start, x_end, y_end){
 	//alert([x_start,y_start]);
-	var path = true;
 	if(x_start == x_end){
 		if(Math.abs(y_end - y_start) == 1){
-			return path;
+			return true;
 		}else{
 			var y_min = Math.min(y_start, y_end);	
 			var y_max = Math.max(y_start, y_end);	
-			for(var i=y_min+1; i++; i<y_max){
+			for(var i=y_min+1; i<y_max; i++){
 				if(game.data_status[getOrderFromCoordinate(x_start, i)]){
 					return false;
 				}
@@ -501,12 +493,17 @@ function checkLine(x_start, y_start, x_end, y_end){
 		}
 	}
 	if(y_start == y_end){
+		console.log('x_start:'+x_start+' y_start:'+y_start);
+		console.log('x_end:'+x_end+' y_end:'+y_end);
 		if(Math.abs(x_end - x_start) == 1){
 			return true;
 		}else{
 			var x_min = Math.min(x_start, x_end);
 			var x_max = Math.max(x_start, x_end);
-			for(var i=x_min+1; i++; i<x_max){
+			console.log('x_min:'+x_min);
+			console.log('x_max:'+x_max);
+			for(var i=x_min+1; i<x_max; i++){
+				console.log('i:'+i);
 				if(game.data_status[getOrderFromCoordinate(i, y_start)]){
 					return false;
 				}
@@ -524,6 +521,7 @@ function changeStatus(x, y){
 }
 
 function getOrderFromCoordinate(x, y){
+	console.log((y-1)*game.matrix_width+x);
 	return (y-1)*game.matrix_width + x;
 }
 </script>
